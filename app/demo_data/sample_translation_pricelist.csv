@@ -1,0 +1,26 @@
+item_id,en,de,price_eur
+1,Item Alpha,Artikel Alpha,10.50
+2,Item Beta,Artikel Beta,25.99
+3,Item Gamma,Artikel Gamma,15.75
+4,Item Delta,Artikel Delta,8.90
+5,Item Epsilon,Artikel Epsilon,12.30
+6,Item Zeta,Zeta Artikel,7.50
+7,Item Eta,Eta Artikel,20.00
+8,Item Theta,Theta Artikel,15.99
+9,Item Iota,Iota Artikel,18.45
+10,Item Kappa,Kappa Artikel,9.95
+11,Item Lambda,Lambda Artikel,14.25
+12,Item Mu,Mu Artikel,22.50
+13,Item Nu,Nu Artikel,11.75
+14,Item Xi,Xi Artikel,16.80
+15,Item Omicron,Omicron Artikel,19.99
+16,Item Pi,Pi Artikel,13.20
+17,Item Rho,Rho Artikel,21.50
+18,Item Sigma,Sigma Artikel,17.85
+19,Item Tau,Tau Artikel,10.99
+20,Item Upsilon,Upsilon Artikel,14.50
+21,Item Phi,Phi Artikel,23.75
+22,Item Chi,Chi Artikel,12.95
+23,Item Psi,Psi Artikel,19.25
+24,Item Omega,Omega Artikel,8.75
+25,Item Zeta,Zeta Artikel (duplicate test),Artikel Zeta (duplicate),5.99

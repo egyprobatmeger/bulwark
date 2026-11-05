@@ -1,0 +1,17 @@
+record_id,process,owner,status
+R-01,Customer account management,Operations,compliant
+R-02,Order fulfilment,Logistics,compliant
+R-03,Payment processing,Finance,compliant
+R-04,Marketing newsletter,Marketing,compliant
+R-05,Customer support tickets,Support,compliant
+R-06,Fraud screening,Finance,compliant
+R-07,Web analytics,Marketing,remediated
+R-08,Supplier onboarding,Procurement,compliant
+R-09,Employee payroll,HR,compliant
+R-10,Access logging,IT security,compliant
+R-11,Backup retention,IT operations,remediated
+R-12,Data subject requests,Legal,compliant
+R-13,CCTV at premises,Facilities,compliant
+R-14,Product reviews,Marketing,compliant
+R-15,Warranty claims,Support,compliant
+R-16,Loyalty programme,Marketing,compliant

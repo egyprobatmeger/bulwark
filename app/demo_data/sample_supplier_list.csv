@@ -1,0 +1,26 @@
+supplier_id,company,contact,email,country
+1,Alpha Corp,Alice Johnson,alice@example.com,US
+2,Beta Ltd,Bob Smith,bob@example.com,CA
+3,Gamma Industries,Carol Lee,carol@example.com,GB
+4,Delta Solutions,David Kim,david@example.com,JP
+5,Epsilon Group,Eve Davis,eve@example.com,DE
+6,Zeta Enterprises,Zachary Wilson,zach@example.com,FR
+7,Eta Technologies,Ethan Brown,ethan@example.com,AU
+8,Theta LLC,Theo Martinez,theo@example.com,BR
+9,Iota Inc,Ivan Petrov,ivan@example.com,RU
+10,Kappa Corp,Kathleen White,kathleen@example.com,US
+11,Lambda Inc,Larry Johnson,larry@example.com,CA
+12,Mu Enterprises,Mia Chen,mia@example.com,GB
+13,Nu Solutions,Nick Davis,nick@example.com,JP
+14,Xi Technologies,Xin Liu,xin@example.com,DE
+15,Omicron Corp,Olivia Taylor,olivia@example.com,FR
+16,Pi Industries,Peter Wilson,peter@example.com,AU
+17,Rho LLC,Rhonda Martinez,rhonda@example.com,BR
+18,Sigma Group,Sam Johnson,sam@example.com,RU
+19,Tau Corp,Tina Smith,tina@example.com,US
+20,Upsilon Ltd,Ulysses Lee,ulysses@example.com,CA
+21,Phi Technologies,Phyllis Chen,phyllis@example.com,GB
+22,Chi Corp,Chloe Brown,chloe@example.com,JP
+23,Psi Inc,Paul Davis,paul@example.com,DE
+24,Omega Enterprises,Omar Wilson,omar@example.com,FR
+25,Delta Solutions (duplicate),David Smith,david.smith@example.com,US

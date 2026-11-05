@@ -1,0 +1,15 @@
+term_id,en,de,context
+T-101,infusion pump,Infusionspumpe,device name
+T-102,volumetric rate,Volumenrate,delivery setting
+T-103,occlusion alarm,Okklusionsalarm,safety alarm
+T-104,bolus dose,Bolusgabe,delivery mode
+T-105,priming,Vorfüllen,setup step
+T-106,air-in-line sensor,Luftblasensensor,sensor
+T-107,keep-vein-open rate,Offenhalterate,delivery setting
+T-108,drug library,Medikamentenbibliothek,software
+T-109,anti-siphon valve,Antisiphonventil,component
+T-110,battery backup,Akku-Notstromversorgung,power
+T-111,flow rate accuracy,Durchflussgenauigkeit,specification
+T-112,alarm silence,Alarmstummschaltung,user interface
+T-113,infusion set,Infusionsset,consumable
+T-114,calibration interval,Kalibrierintervall,maintenance

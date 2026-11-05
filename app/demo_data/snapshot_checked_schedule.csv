@@ -1,0 +1,13 @@
+clause_id,en,de
+SCH-01,Insured sum: 250000 euro per occurrence,Vereinbarte Versicherungssumme: 250000 Euro je Schadenfall
+SCH-02,Covered perils: fire lightning explosion and storm,Versicherte Gefahren: Feuer Blitzschlag Explosion und Sturm
+SCH-03,Deductible: 500 euro per claim,Selbstbeteiligung: 500 Euro je Schadenfall
+SCH-04,Annual premium: 1840 euro payable quarterly,Jahresprämie: 1840 Euro zahlbar vierteljährlich
+SCH-05,Territorial scope: all sites within the European Union,Geltungsbereich: alle Standorte innerhalb der Europäischen Union
+SCH-06,Period of insurance: 1 January to 31 December,Versicherungsperiode: 1. Januar bis 31. Dezember
+SCH-07,Exclusion: damage caused by gradual wear and tear,Ausschluss: Schäden durch allmähliche Abnutzung
+SCH-08,Claims notice period: 14 days from discovery,Meldefrist für Schäden: 14 Tage ab Entdeckung
+SCH-09,Sublimit for theft: 25000 euro per occurrence,Unterlimit für Diebstahl: 25000 Euro je Schadenfall
+SCH-10,Flood cover included up to 50000 euro,Überschwemmungsdeckung bis 50000 Euro eingeschlossen
+SCH-11,Business interruption: indemnity period 12 months,Betriebsunterbrechung: Haftungszeitraum 12 Monate
+SCH-12,Legal expenses cover: 15000 euro per dispute,Rechtsschutzdeckung: 15000 Euro je Streitfall
