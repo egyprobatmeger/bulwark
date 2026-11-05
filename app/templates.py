@@ -1501,7 +1501,7 @@ def _label_offers(job):
     """Offers for label purposes: only a posted circle job
     can carry a negotiation stage, so only there is the
     per-card fetch worth it. Everywhere else the label is
-    '' anyway, exactly as before v5.3."""
+    '' anyway, exactly as before."""
     if job.circle and job.state == 'posted':
         from app.db import list_offers as _lo
         return _lo(job.id)
@@ -1523,7 +1523,7 @@ def _circle_note(job, offers=None):
     """Circle marker + negotiation label as one human-readable note.
 
     The two parts are joined with ' · ' whenever BOTH are present —
-    never concatenated bare (v5.6.1 fix: for circle == 'open' the card
+    never concatenated bare (fix: for circle == 'open' the card
     rendered 'Open to all workersPrice agreed — ready to fund')."""
     marker = _circle_marker(job)
     label = _negotiation_label(job, offers)
@@ -1698,7 +1698,7 @@ def render_job_board(jobs: List[Job], state_filter: str = "",
         f'<p>{ "Every job is listed here, at the stage it has reached. Open one to make an offer, deliver work, or follow its progress — each job page shows the step that is yours from this desk." if nav_view == "worker" else "Your money is held, the delivery is checked against your criteria, then released or refunded automatically." }</p>',
         '</header>',
     ]
-    # Board role strip (v5.3): ONE line under the heading
+    # Board role strip: ONE line under the heading
     # when the seated actor is known.
     if actor_line:
         parts.append(
@@ -1706,8 +1706,8 @@ def render_job_board(jobs: List[Job], state_filter: str = "",
             f'color:#555;">{_escape(actor_line)}</p>')
     parts.append(_render_process_rail(1, 'posted'))
 
-    # State filter (Slice 1.7 — audit visibility at a glance).
-    # v5.7: BOTH boards carry the same chips over the same job
+    # State filter (audit visibility at a glance).
+    # BOTH boards carry the same chips over the same job
     # set — each board's chips point at its own board.
     _board_base = '/w' if nav_view == "worker" else '/c'
     filters = [("funded", "Funded"), ("delivered", "Delivered"),
@@ -2388,7 +2388,7 @@ def _render_verifier_card(verdict_row, attempt_label: str = "") -> str:
     if judge_model:
         meta += f' &middot; Judgment model: {_escape(str(judge_model))}'
     parts.append(f'<div class="verifier-meta">{meta}</div>')
-    # --- Originality surface (Slice 2.3) ---
+    # --- Originality surface ---
     _sim = verdict_row.get("similarity_max", -1)
     _sim_job = verdict_row.get("similarity_job_id", -1)
     _dup = verdict_row.get("csv_dup_ratio", -1)
@@ -2474,7 +2474,7 @@ def _render_offers_box(job, offers, offer_workers, offer_actor,
     offers = offers or []
     accepted = next((o for o in offers if o.status == 'accepted'),
                     None)
-    # v5.4: filter the action controls by the visitor's view.
+    # filter the action controls by the visitor's view.
     # 'worker' -> worker controls (bid forms, Withdraw on own offers);
     # everything else ('client', 'door', no cookie) -> client controls
     # (Accept/Decline only).
@@ -2514,7 +2514,7 @@ def _render_offers_box(job, offers, offer_workers, offer_actor,
                     '</div>')
             elif controls_view == 'worker' and offer_actor and \
                     offer_actor.get('id') == o.worker_id:
-                # v5.4: in worker view, Withdraw appears ONLY on the
+                # in worker view, Withdraw appears ONLY on the
                 # actor's own offers (offer_actor is a party dict or
                 # None); no actor -> no Withdraw anywhere.
                 actions = (
@@ -2609,7 +2609,7 @@ def _render_offers_box(job, offers, offer_workers, offer_actor,
             ' until the client accepts an offer.</p>')
     parts.extend(rows)
     if accepted is None and controls_view == 'client':
-        # v5.7: bidding lives at the worker's desk. In the client
+        # bidding lives at the worker's desk. In the client
         # view the offers stay readable, and one line where the
         # bid form belongs switches THIS job to the worker view.
         parts.append(
@@ -2618,7 +2618,7 @@ def _render_offers_box(job, offers, offer_workers, offer_actor,
             f'Switch to the worker view of this job</a> to bid '
             f'on it.</p>')
     if accepted is None and controls_view == 'worker':
-        # The make-an-offer form. v5.4: only the worker controls-view
+        # The make-an-offer form. only the worker controls-view
         # may make an offer; the client view sees none of these forms.
         if job.is_open:
             options = []
@@ -2744,7 +2744,7 @@ def _render_offers_box(job, offers, offer_workers, offer_actor,
                 '<button type="submit" class="btn-secondary">'
                 'Make a counter-offer</button></form>')
     if accepted is None and controls_view == 'worker':
-        # v5.7: deciding on an offer lives at the client's desk.
+        # deciding on an offer lives at the client's desk.
         parts.append(
             f'<p class="help-text">Accepting or declining an '
             f'offer is the client\'s step. '
@@ -2802,7 +2802,7 @@ def render_job_detail(job: Job, info_message: str = "",
         'sees it (API + UI actions, in order).</p>',
     ]
 
-    # v5.7 role separation: the view selects whose controls this
+    # role separation: the view selects whose controls this
     # page renders — each side works from its own desk, while all
     # status information stays visible from both. 'worker' only
     # when the visitor is at the worker's desk; everything else
@@ -2821,10 +2821,9 @@ def render_job_detail(job: Job, info_message: str = "",
                 f'<a href="/job/{job.id}/as/{view}">Switch to the '
                 f'{label} view of this job</a> to continue.</p>')
 
-    # Demo guide (Slice 2.8): directly under the header/rail, so a
+    # Demo guide: directly under the header/rail, so a
     # demo visitor always sees their current role + the next step
-    # before anything else (Kiss's demo-UX requirement; moved up
-    # after the 2.8 visual gate found it buried mid-page).
+    # before anything else.
     if guide_html:
         parts.append(guide_html)
 
@@ -2961,7 +2960,7 @@ def render_job_detail(job: Job, info_message: str = "",
         # The Fund button exists only against an agreed price:
         # on an open listing it appears the moment an offer is
         # accepted — before that there is nothing to fund.
-        # Funding is the client's step (v5.7): the worker's desk
+        # Funding is the client's step: the worker's desk
         # gets the pointer line instead of the button.
         price_label = job.formatted_price()
         if controls_view == 'client':
@@ -2976,11 +2975,11 @@ def render_job_detail(job: Job, info_message: str = "",
             parts.append(_other_side_note(
                 'Funding this job is the client\'s step.', 'client'))
 
-    # --- Delivery section (Slice 1.3) ---
+    # --- Delivery section ---
     # Delivery form: visible only when job is funded (state can accept a
     # delivery). Deliveries list: visible when state is delivered or when
     # prior deliveries exist.
-    # v5.7: delivering is the worker's step — the whole section
+    # delivering is the worker's step — the whole section
     # (prepared-file button, sample generator, upload form) renders
     # only at the worker's desk; the client's desk gets one pointer
     # line where the section belongs.
@@ -3108,7 +3107,7 @@ def render_job_detail(job: Job, info_message: str = "",
         parts.append('</div>')
         parts.append('</div>')
 
-    # --- Check section (Slice 1.4): Run check on a delivered job ---
+    # --- Check section: Run check on a delivered job ---
     if job.state == 'delivered':
         parts.append('<div class="check-section" id="check">')
         parts.append('<h2>Run Acceptance Check</h2>')
@@ -3124,7 +3123,7 @@ def render_job_detail(job: Job, info_message: str = "",
             f'Run Check</button></form>')
         parts.append('</div>')
 
-    # --- Verifier AI card(s) (Slice 1.4; both attempts shown in 1.6) ---
+    # --- Verifier AI card(s) (both attempts shown) ---
     all_verdicts = verdicts if verdicts is not None else (
         [verdict] if verdict else [])
     if all_verdicts:
@@ -3142,7 +3141,7 @@ def render_job_detail(job: Job, info_message: str = "",
         if job.state != 'delivered':
             parts.append('</div>')
 
-    # --- Appeal (Slice 2.3): ONE senior re-check after a final FAIL,
+    # --- Appeal: ONE senior re-check after a final FAIL,
     # decided by the OTHER AI judge model. Its verdict is final.
     if job.state == 'checked_fail' and all_verdicts:
         _has_appeal = any(v.get('is_appeal') for v in all_verdicts)
@@ -3161,7 +3160,7 @@ def render_job_detail(job: Job, info_message: str = "",
                 '(criteria and originality); its verdict replaces this '
                 'one and is final.</p>')
             if controls_view == 'worker':
-                # Appealing is the worker's step (v5.7).
+                # Appealing is the worker's step.
                 parts.append(
                     f'<form method="POST" action="/job/{job.id}/appeal" '
                     f'style="margin-top: 12px;">'
@@ -3169,7 +3168,7 @@ def render_job_detail(job: Job, info_message: str = "",
                     f'Appeal this verdict</button></form>')
         parts.append('</div>')
 
-    # --- Revision window (Slice 1.6): a failed check opens exactly one
+    # --- Revision window: a failed check opens exactly one
     # revision; the client may instead reject and refund immediately.
     if job.state == 'checked_fail':
         _fraud = bool(verdict) and verdict.get('fraud_signal') == 'fraud'
@@ -3194,7 +3193,7 @@ def render_job_detail(job: Job, info_message: str = "",
             pass  # no revision form on a fraud verdict
         elif not job.revision_used:
             if controls_view == 'worker':
-                # The revised delivery is the worker's step (v5.7).
+                # The revised delivery is the worker's step.
                 parts.append(
                     f'<form method="POST" action="/job/{job.id}/revise" '
                     f'enctype="multipart/form-data" style="margin-top: 12px;">'
@@ -3220,7 +3219,7 @@ def render_job_detail(job: Job, info_message: str = "",
                 '<p><strong>The one permitted revision has been '
                 'used.</strong></p>')
         if controls_view == 'client':
-            # Rejecting and refunding is the client's step (v5.7).
+            # Rejecting and refunding is the client's step.
             parts.append(
                 f'<form method="POST" action="/job/{job.id}/reject" '
                 f'style="margin-top: 15px;">'
@@ -3234,7 +3233,7 @@ def render_job_detail(job: Job, info_message: str = "",
         parts.append('</div>')
 
 
-    # --- Trust credit (Slice 2.4): the advance, visible from the
+    # --- Trust credit: the advance, visible from the
     # moment it is paid at acceptance.
     if job.trust_credit_state == 'advanced':
         parts.append('<div class="trust-panel">')
@@ -3262,7 +3261,7 @@ def render_job_detail(job: Job, info_message: str = "",
             'captured and split at settlement below.</p>')
         parts.append('</div>')
 
-    # --- Settlement (Slice 1.5) ---
+    # --- Settlement ---
     if job.state == 'checked_pass':
         parts.append('<div class="check-section">')
         parts.append('<h2>Settle this job</h2>')
@@ -3270,7 +3269,7 @@ def render_job_detail(job: Job, info_message: str = "",
             '<p>The check passed. Settling captures the held amount '
             'and splits it three ways by the configured percentages.</p>')
         if controls_view == 'client':
-            # Settling releases the money — the client's step (v5.7).
+            # Settling releases the money — the client's step.
             parts.append(
                 f'<form method="POST" action="/job/{job.id}/settle" '
                 f'style="margin-top: 12px;">'
@@ -3343,7 +3342,7 @@ def render_job_detail(job: Job, info_message: str = "",
                 f'</strong> &middot; {_escape(str(it.get("status", "")))}'
                 f' &middot; item {_escape(str(it.get("payout_item_id", "")))}'
                 f'</span></div>')
-        # --- Checker fee vesting row (Slice 2.5) ---
+        # --- Checker fee vesting row ---
         if job.checker_vesting_state:
             cur = job.captured_currency or job.currency
             amt = _fmt_cents(job.checker_vesting_amount_cents, cur)
@@ -3369,7 +3368,7 @@ def render_job_detail(job: Job, info_message: str = "",
                 f'<span>{vtxt}</span></div>')
         parts.append('</div>')
 
-    # --- Certificate panel (Slice 2.6) ---
+    # --- Certificate panel ---
     from app.db import get_certificate_by_job as _gcert
     _cert = _gcert(job.id) if job.state in ('settled', 'disputed_overturned') else None
     if _cert:
@@ -3384,7 +3383,7 @@ def render_job_detail(job: Job, info_message: str = "",
             f'</span></div>')
         parts.append('</div>')
 
-    # --- Dispute card (Slice 2.5) ---
+    # --- Dispute card ---
     if job.checker_vesting_state == 'vesting' and not job.dispute_state:
         parts.append('<div class="brain-panel">')
         parts.append('<h2>Dispute window — checker fee still vesting</h2>')
@@ -3393,7 +3392,7 @@ def render_job_detail(job: Job, info_message: str = "",
             'this settlement. Opening a dispute freezes the fee until a '
             'senior re-check of the stored delivery decides it.</p>')
         if controls_view == 'client':
-            # Opening a dispute is the client's step (v5.7).
+            # Opening a dispute is the client's step.
             parts.append(f'<form method="POST" action="/job/{job.id}/dispute">')
             parts.append(
                 '<label>Reason <input type="text" name="reason" '
@@ -3418,7 +3417,7 @@ def render_job_detail(job: Job, info_message: str = "",
             'is paid to the client instead.</p>')
         if controls_view == 'client':
             # Running the dispute's resolution is driven from the
-            # client's desk, like opening it (v5.7).
+            # client's desk, like opening it.
             parts.append(
                 f'<form method="POST" action="/job/{job.id}/dispute/resolve">'
                 '<button type="submit" class="btn-primary">Run senior '
@@ -3444,7 +3443,7 @@ def render_job_detail(job: Job, info_message: str = "",
     if job.checker_vesting_state == 'vesting' and job.dispute_state != 'open':
         if controls_view == 'client':
             # Releasing the vested fee is a release control — the
-            # client's desk (v5.7).
+            # client's desk.
             parts.append(
                 f'<form method="POST" action="/job/{job.id}/release-vesting" '
                 'style="margin: 10px 0;"><button type="submit" '
@@ -3454,7 +3453,7 @@ def render_job_detail(job: Job, info_message: str = "",
                 'Releasing the vested checker fee is the '
                 'client\'s step.', 'client'))
 
-    # --- Refund panel (Slice 1.6) ---
+    # --- Refund panel ---
     if job.state == 'refunded':
         parts.append('<div class="settlement-panel" id="settlement">')
         parts.append('<h2>Money returned</h2>')
@@ -3470,7 +3469,7 @@ def render_job_detail(job: Job, info_message: str = "",
             'party received a payout for this job.</p>')
         parts.append('</div>')
 
-    # Settlement Brain section (Slice 2.2)
+    # Settlement Brain section
     if job.has_terms:
         parts.append(_render_brain_box(job))
 
@@ -3517,7 +3516,7 @@ def render_job_detail(job: Job, info_message: str = "",
         'nothing can be submitted twice.</p>')
     parts.append('</div>')
 
-    # --- Timeline / audit trail (Slice 1.7) ---
+    # --- Timeline / audit trail ---
     if events:
         parts.append('<div class="timeline-section">')
         parts.append('<h2>Timeline</h2>')
@@ -3963,7 +3962,7 @@ def render_party_page(party, same_kind_parties, party_jobs, events,
                      'behind the specialist work it takes on.</p>')
         parts.append('</div>')
 
-    # API access (Slice 2.9): per-party key for the JSON API. The
+    # API access: per-party key for the JSON API. The
     # plaintext is shown exactly once, right after issuance; only its
     # sha256 hash is stored.
     parts.append('<div class="counters-section">')
@@ -3988,7 +3987,7 @@ def render_party_page(party, same_kind_parties, party_jobs, events,
            else 'Issue API key') + '</button></form>')
     parts.append('</div>')
 
-    # Certificates earned as a worker (Slice 2.6).
+    # Certificates earned as a worker.
     if party["kind"] == "worker":
         from app.db import list_certificates_for_worker as _lcerts
         _certs = _lcerts(party["id"])
@@ -4075,7 +4074,7 @@ def render_party_page(party, same_kind_parties, party_jobs, events,
 
 
 def render_party_form(values=None, errors=None, nav_view='door') -> str:
-    """Add-a-party form (Slice 2.1): name, kind, form, payout email.
+    """Add-a-party form: name, kind, form, payout email.
     A failed submission re-renders with values preserved and the
     problem fields marked (the form rule)."""
     values = values or {}
@@ -4154,7 +4153,7 @@ def render_party_form(values=None, errors=None, nav_view='door') -> str:
 
 def render_evidence_pack(job: Job, verdicts=None, deliveries=None,
                          events=None, nav_view: str = 'door') -> str:
-    """Slice 2.5: the printable evidence pack for a job — every fact a
+    """the printable evidence pack for a job — every fact a
     dispute (here or at PayPal) would need, on one page."""
     from app.db import get_party as _gp
     verdicts = verdicts or []
@@ -4276,7 +4275,7 @@ td {{ border: 1px solid var(--border-color); padding: 6px 10px; }}
 
 
 def render_certificate(job: Job, cert, nav_view: str = 'door') -> str:
-    """Slice 2.6: the birth certificate page — a premium D3 document."""
+    """the birth certificate page — a premium D3 document."""
     f = cert.get("facts") or {}
     from app.db import get_party as _gp
 
@@ -4327,7 +4326,7 @@ def render_certificate(job: Job, cert, nav_view: str = 'door') -> str:
 def render_verify_page(serial: str, code: str, result,
                         errors=None, nav_view='door') -> str:
     errors = errors or {}
-    """Slice 2.6: public verification — genuine pair shows the recorded
+    """public verification — genuine pair shows the recorded
     facts; anything else is a clear invalid with no facts leaked."""
     if result:
         f = result.get("facts") or {}
@@ -4372,7 +4371,7 @@ nothing further can be shown.</p></div>"""
 
 
 # ---------------------------------------------------------------------------
-# Slice 2.7: money-state dashboard (AG Grid + server-rendered fallback)
+# money-state dashboard (AG Grid + server-rendered fallback)
 
 _MONEY_STATES = [
     ("posted", "Posted"),
@@ -4409,14 +4408,14 @@ def money_state_of(state: str):
 
 
 def render_dashboard(rows, totals, history=None, nav_view='client', view_note=None) -> str:
-    """Slice 2.7: /dashboard — redesigned according to Design 4.0.
+    """/dashboard — redesigned according to Design 4.0.
 
     rows: list of dicts prepared by the handler.
     totals: list of (key, label, count, total_cents) in _MONEY_STATES order.
     history: optional list of {ts, job_title, text, amount_cents} events.
     view_note: optional context note about whose eyes the list is shown.
     """
-    # Compute the four totals per Design 4.0 (Items C.1)
+    # Compute the four totals per Design 4.0
     # Mapping: Held = 'funded-held' + 'delivered'; Being checked = 'checking';
     # Paid out = 'released'; Refunded = 'refunded'; 'posted' excluded.
     from collections import defaultdict
@@ -4480,7 +4479,7 @@ def render_dashboard(rows, totals, history=None, nav_view='client', view_note=No
     if view_note is not None and not rows:
         parts.append('<p>No payments for this view yet.</p>')
     
-    # Group jobs by state (Items C.2)
+    # Group jobs by state
     grouped = defaultdict(list)
     for r in rows:
         grouped[r['money_state_key']].append(r)
@@ -4500,7 +4499,7 @@ def render_dashboard(rows, totals, history=None, nav_view='client', view_note=No
     render_group('released', 'Paid out', grouped.get('released', []))
     render_group('refunded', 'Refunded', grouped.get('refunded', []))
     
-    # Transaction history (Items C.3)
+    # Transaction history
     parts.append('<div class="timeline-section"><h2>Transaction history</h2>')
     if history:
         parts.append('<div class="timeline">')
@@ -4520,7 +4519,7 @@ def render_dashboard(rows, totals, history=None, nav_view='client', view_note=No
 
 
 # ---------------------------------------------------------------------------
-# Slice 2.8: demo cast — guided demo UX (Kiss requirement, 2026-10-08)
+# demo cast — guided demo UX
 
 #: The funded step as the worker lives it: every delivery
 #: way really is further down the page at the worker’s desk.
@@ -4596,7 +4595,7 @@ def render_demo_guide(job, actor, client_name, worker_name,
         return ""
 
     # Next step: phase jobs speak from their negotiation
-    # stage (v5.3); other demo jobs keep the lifecycle text.
+    # stage; other demo jobs keep the lifecycle text.
     if job.demo_tag == "phase":
         from app.db import list_offers as _list_offers
         offers = _list_offers(job.id)
@@ -4617,7 +4616,7 @@ def render_demo_guide(job, actor, client_name, worker_name,
     # keeps the neutral text (money in the vault, the
     # worker’s step is next): that desk holds no delivery
     # controls, and the guide must not pretend otherwise
-    # (role split, Kiss 2026-11-03; guide fix 2026-11-05).
+    # (role split).
     at_worker_desk = (view == "worker")
     if job.state == "funded" and at_worker_desk:
         nxt = _FUNDED_STEP_WORKER
@@ -4690,7 +4689,7 @@ def render_demo_guide(job, actor, client_name, worker_name,
     else:
         formatted_nxt = nxt
     
-    # Closing lines (Kiss, 2026-11-05): the guide always
+    # Closing lines: the guide always
     # offers the other side’s view of THIS job — that is
     # where a visitor switches sides, in place — and when
     # the next step belongs to the other side it says who we
@@ -4731,7 +4730,7 @@ def render_demo_guide(job, actor, client_name, worker_name,
 def render_demo_page(demo_parties, stories, jobs_map, actor,
                      history=None, seed_note=None, ready=None,
                      phase_jobs=None) -> str:
-    """Slice 2.8: /demo — the three stories, the one-click role
+    """/demo — the three stories, the one-click role
     switcher, and a Reset that recreates the cast fresh."""
     parts = [
         '<!DOCTYPE html>',
@@ -4773,7 +4772,7 @@ def render_demo_page(demo_parties, stories, jobs_map, actor,
         '</header>',
     ]
     
-    # Pick your seat (v5.3): the seat picker lives on this
+    # Pick your seat: the seat picker lives on this
     # page. Choosing a seat sets the guide cookie; the
     # chosen card shows the state straight back, with the
     # way onward for that seat.
@@ -4840,7 +4839,7 @@ def render_demo_page(demo_parties, stories, jobs_map, actor,
         'record.</p>')
     parts.append('</div>')
 
-    # Reset. (v5.6 F4: flex with wrap — at phone width the note
+    # Reset. (flex with wrap — at phone width the note
     # takes its own row instead of overlapping the button; on
     # wide screens it sits beside the button as before.)
     parts.append(
@@ -4914,7 +4913,7 @@ def render_demo_page(demo_parties, stories, jobs_map, actor,
             'ready-made job</button></form>')
     parts.append('</div>')
 
-    # Try the flow (v5.3): the five phase jobs, one per
+    # Try the flow: the five phase jobs, one per
     # negotiation stage, in stage order — each with its
     # stage badge and the next step for that stage.
     if phase_jobs:
@@ -5301,7 +5300,7 @@ def render_worker_view(party, jobs, jobs_by_stage, certificates,
 
 
 def render_machine_view(job, calls, nav_view='client') -> str:
-    """Slice 2.9: the integrator machine view — one job's service-call
+    """the integrator machine view — one job's service-call
     stream (API + UI actions) in call order."""
     parts = [
         '<!DOCTYPE html>',
@@ -5366,7 +5365,7 @@ def render_machine_view(job, calls, nav_view='client') -> str:
 
 def render_entry(held: int = 0, checking: int = 0, paid_out: int = 0, refunded: int = 0,
                  latest_certificate=None, nav_view='door') -> str:
-    """Slice 2: the entry page (door) — door nav, header, chooser, counters grid,
+    """the entry page (door) — door nav, header, chooser, counters grid,
     latest certificate card, footer lines. NO job list, NO rails, NO chips, NO job pages.
     """
     # Door nav

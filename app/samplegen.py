@@ -1,6 +1,6 @@
 """Demo sample generator — a DEMO SHORTCUT, not a product feature.
 
-Kiss's judge-friendliness requirement: a demo visitor (a hackathon
+Judge-friendliness requirement: a demo visitor (a hackathon
 judge) cannot be expected to invent a job AND author a conforming
 document before Bulwark does anything interesting. This module
 synthesizes ONE sample delivery from a job's OWN recorded acceptance

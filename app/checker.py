@@ -1,5 +1,5 @@
 """
-Slice 1.4 — Bulwark checker.
+Bulwark checker.
 
 Deterministic criteria evaluated by code against the delivered files, plus
 ONE LLM judgment call via the in-app model through the factory surrogate
@@ -29,7 +29,7 @@ unparseable response), call_judge raises JudgeUnavailableError and
 run_check records the criterion as NOT JUDGED: the run is then
 "incomplete" — it never counts as a FAIL, never moves the job's
 state, and never consumes the worker's revision or appeal rights
-(v5.6, finding F1).
+.
 """
 import csv
 import http.client
@@ -89,7 +89,7 @@ def _now_iso() -> str:
 def delivery_paths(job_id: int) -> List[str]:
     """Absolute filesystem paths for the CURRENT delivery batch.
 
-    Slice 1.6: when a revision batch exists, the check measures ONLY
+    when a revision batch exists, the check measures ONLY
     the revised delivery (the original batch stays in history but is
     not re-measured); otherwise it measures the original batch."""
     deliveries = get_deliveries(job_id)
@@ -335,7 +335,7 @@ def _column_values(paths: List[str], column: str):
 
 def eval_unique_column(criterion: Criterion,
                        paths: List[str]) -> Tuple[bool, str, str]:
-    """Slice 2.3: PASS iff the named CSV column has no duplicate values.
+    """PASS iff the named CSV column has no duplicate values.
     The expected value is the column name."""
     values, found_in, err = _column_values(paths, criterion.expected_value)
     if err:
@@ -357,7 +357,7 @@ def eval_unique_column(criterion: Criterion,
 
 def eval_nonempty_column(criterion: Criterion,
                          paths: List[str]) -> Tuple[bool, str, str]:
-    """Slice 2.3: PASS iff the named CSV column has no empty cells.
+    """PASS iff the named CSV column has no empty cells.
     The expected value is the column name."""
     values, found_in, err = _column_values(paths, criterion.expected_value)
     if err:
@@ -511,7 +511,7 @@ class JudgeUnavailableError(Exception):
     """The AI judge could not decide: an infrastructure failure
     (HTTP error, network, unparseable response) on every model
     tried. Distinct from a judged FAIL — run_check records the
-    criterion as NOT JUDGED and the run as incomplete (v5.6 F1)."""
+    criterion as NOT JUDGED and the run as incomplete."""
 
 
 def call_judge(criterion: Criterion, job, excerpt: str,
@@ -549,7 +549,7 @@ def call_judge(criterion: Criterion, job, excerpt: str,
         {"role": "user", "content": prompt},
     ]
 
-    # --- Pinned single model (Slice 2.3: dual mode + appeal) ---
+    # --- Pinned single model (dual mode + appeal) ---
     if only_model:
         try:
             data = _openrouter_chat(only_model, messages, bearer)
@@ -624,7 +624,7 @@ class VerdictItem:
     checked_at: str
     checker_kind: str      # "code" or "llm"
     model_id: str          # "" for code
-    judged: bool = True    # False only when the judge never decided (v5.6 F1)
+    judged: bool = True    # False only when the judge never decided
 
 
 @dataclass
@@ -634,9 +634,9 @@ class Verdict:
     items: List[VerdictItem]
     checked_at: str
     judge_model: str       # which model judged ("" if no judgment criterion)
-    originality: Dict[str, Any] = field(default_factory=dict)   # Slice 2.3
-    suppress_first_events: bool = False                        # Slice 2.3
-    incomplete: bool = False   # v5.6 F1: a criterion was never judged
+    originality: Dict[str, Any] = field(default_factory=dict)
+    suppress_first_events: bool = False
+    incomplete: bool = False   # a criterion was never judged
 
 
 def _item_unsupported(criterion: Criterion) -> VerdictItem:
@@ -654,7 +654,7 @@ def _item_unsupported(criterion: Criterion) -> VerdictItem:
 
 
 # ---------------------------------------------------------------------------
-# Originality analysis (Slice 2.3) — deterministic, no AI.
+# Originality analysis — deterministic, no AI.
 # ---------------------------------------------------------------------------
 TOKEN_RE = re.compile(r"[a-z0-9]+")
 SIMILARITY_FRAUD_THRESHOLD = 0.90
@@ -732,7 +732,7 @@ def analyse_originality(job_id: int, paths: List[str]) -> Dict[str, Any]:
     for other in list_jobs():
         if other.id == job_id:
             continue
-        # Slice 2.8: deliveries of ARCHIVED demo jobs are not part of
+        # deliveries of ARCHIVED demo jobs are not part of
         # the originality corpus. An archived demo job is a superseded
         # demo run (Reset demo archives it), not real earlier work —
         # without this, re-running the demo would flag the new run's
@@ -861,7 +861,7 @@ def run_check(job_id: int, judge_model: Optional[str] = None,
             model_id="",
         ))
 
-    # --- Originality analysis (Slice 2.3): always measured, always
+    # --- Originality analysis: always measured, always
     # recorded as an item. Fraud or excessive CSV duplication FAILs the
     # delivery regardless of the criteria.
     orig = analyse_originality(job_id, delivery_paths(job_id))
@@ -899,7 +899,7 @@ def run_check(job_id: int, judge_model: Optional[str] = None,
             reason="No copy of an earlier delivery detected.",
             checked_at=_now_iso(), checker_kind="code", model_id=""))
 
-    # v5.6 (F1): a criterion the judge never decided makes the
+    # a criterion the judge never decided makes the
     # run INCOMPLETE — unless another, actually-judged item
     # already failed the delivery on its own merits (a fraud
     # flag or a deterministic miss is a real FAIL; the outage
@@ -931,9 +931,9 @@ def run_check(job_id: int, judge_model: Optional[str] = None,
             {"similarity_max": orig["similarity_max"],
              "matched_job_id": orig["similarity_job_id"]})
     if not is_dispute and not incomplete:
-        # A dispute re-check (Slice 2.5) must not move a settled job
+        # A dispute re-check must not move a settled job
         # back to a checked state; the dispute handler owns the state.
-        # An incomplete run (v5.6 F1) must not move the job either:
+        # An incomplete run must not move the job either:
         # nothing was decided.
         set_job_checked(job_id, overall)
     return verdict
@@ -956,5 +956,5 @@ def can_check(job_id: int) -> Tuple[bool, str]:
         return False, (
             f"Check already run on this delivery (state: {job.state}). "
             f"A verdict is already stored. Re-checks happen only via the "
-            f"revision path (Slice 1.6).")
+            f"revision path.")
     return True, ""

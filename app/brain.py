@@ -1,10 +1,10 @@
 """
-Slice 2.2 — Settlement Brain.
+Settlement Brain.
 
 Uses the job price/currency, acceptance criteria, and party reputation
 counters to set protective terms per job at funding time.
 The terms are stored on the job, shown plainly in the UI, and consumed by
-later slices. Money movement itself does NOT change in this slice.
+later slices. Money movement itself does NOT change here.
 """
 import json
 import os
@@ -96,12 +96,12 @@ Choose protective terms for this job:
    - 0 = none (worker gets full fee at delivery)
    - 25 = Bulwark may advance 25% of worker fee at delivery
    - 50 = Bulwark may advance 50% of worker fee at delivery
-   - Note: Only recorded in this slice, used by slice 2.5
+   - Note: Only recorded here, used later
 
 4. Worker stake percent: Choose from [0, 10]
    - 0 = none (no stake on first jobs)
    - 10 = 10% worker stake on first jobs
-   - Note: Only recorded in this slice, used by slice 2.5
+   - Note: Only recorded here, used later
 
 Reply with JSON ONLY: {{"verification_mode": "...", "vesting_hours": ..., "trust_credit_percent": ..., "stake_percent": ..., "narrative": "1-3 plain sentences explaining the choice for THIS job"}}
 """

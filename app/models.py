@@ -92,7 +92,7 @@ class Job:
     state: str
     created_at: str
     criteria: List[Criterion] = field(default_factory=list)
-    # PayPal vault fields (Slice 1.2+). Nullable until funded.
+    # PayPal vault fields (the build). Nullable until funded.
     paypal_order_id: str = ""
     paypal_authorization_id: str = ""
     authorization_status: str = ""
@@ -100,11 +100,11 @@ class Job:
     funded_currency: str = ""
     funded_at: str = ""
     paypal_error: str = ""
-    # Party assignments (Slice 2.1). Always populated after migration.
+    # Party assignments. Always populated after migration.
     client_id: int = 1
     worker_id: int = 2
     checker_id: int = 3
-    # Settlement fields (Slice 1.5). Nullable until settled.
+    # Settlement fields. Nullable until settled.
     capture_id: str = ""
     capture_status: str = ""
     captured_amount_cents: int = 0
@@ -114,12 +114,12 @@ class Job:
     payout_items: List[dict] = field(default_factory=list)
     settled_at: str = ""
     settle_error: str = ""
-    # Refund fields (Slice 1.6). Nullable until refunded.
+    # Refund fields. Nullable until refunded.
     refund_id: str = ""
     refund_status: str = ""
     refunded_at: str = ""
     revision_used: bool = False
-    # Settlement Brain fields (Slice 2.2)
+    # Settlement Brain fields
     terms_verification_mode: str = ""
     terms_vesting_hours: int = -1
     terms_trust_credit_percent: int = -1
@@ -127,13 +127,13 @@ class Job:
     brain_narrative: str = ""
     brain_model: str = ""
     brain_degraded: int = 0
-    # Slice 2.4: trust credit
+    # trust credit
     trust_credit_state: str = ""
     advance_capture_id: str = ""
     advance_batch_id: str = ""
     advanced_cents: int = 0
     advance_payout_items: list = field(default_factory=list)
-    # Slice 2.5: checker-fee vesting + dispute window.
+    # checker-fee vesting + dispute window.
     checker_vesting_state: str = ""  # '' | vesting | released | paid_to_client
     checker_vesting_amount_cents: int = 0
     checker_release_at: str = ""
@@ -143,14 +143,14 @@ class Job:
     dispute_reason: str = ""
     dispute_opened_at: str = ""
     dispute_resolved_at: str = ""
-    # Slice 2.8: demo cast tagging ('' | active | archived)
+    # demo cast tagging ('' | active | archived)
     demo_tag: str = ""
     # Price negotiation: 'fixed' (posted with a price) or 'open'
     # (posted without a price — workers bid, the client picks one).
     # An open job has price_cents 0 and worker_id 0 until an offer
     # is accepted; acceptance locks both, irrevocably.
     price_mode: str = "fixed"
-    # Circle: '' (legacy v5.1) | 'invited' | 'open' | 'both' (v5.2)
+    # Circle: '' (legacy) | 'invited' | 'open' | 'both'
     circle: str = ""
     # Invited worker when circle is 'invited' or 'both'
     invited_worker_id: int = 0

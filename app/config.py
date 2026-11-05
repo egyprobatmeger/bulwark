@@ -1,5 +1,5 @@
 """
-Bulwark configuration — Slice 1.2+: Funding, payout split, sandbox fixtures.
+Bulwark configuration — Funding, payout split, sandbox fixtures.
 
 Money-path constants live here only. Credentials NEVER come from here
 they are read from the environment at runtime by paypal_client.py.
@@ -33,7 +33,7 @@ PLATFORM_RECEIVER_EMAIL = os.environ.get('PAYPAL_SANDBOX_BUSINESS_EMAIL')
 # documented as replaceable once real sandbox test accounts are linked.
 WORKER_RECEIVER_EMAIL = "worker@example.com"   # replace with real sandbox test account when linked
 CHECKER_RECEIVER_EMAIL = "checker@example.com"  # replace with real sandbox test account when linked
-CLIENT_RECEIVER_EMAIL = "client@example.com"  # dispute-recovery fallback (Slice 2.5)
+CLIENT_RECEIVER_EMAIL = "client@example.com"  # dispute-recovery fallback
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +61,7 @@ SANDBOX_TEST_CARD = {
 }
 
 # Pool of sandbox test cards PROVEN to authorize against this sandbox
-# app (coordinator probe, 2026-10-10): all four returned HTTP 201
+# app (verified live): all four returned HTTP 201
 # COMPLETED on live authorize attempts. When the sandbox card
 # processor refuses one instrument during a refusal wave, the funding
 # flow rotates to the next card in the pool. All entries are public

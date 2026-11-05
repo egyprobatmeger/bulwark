@@ -1,5 +1,5 @@
 """
-PayPal sandbox client — Slice 1.2: Funding (Orders authorize).
+PayPal sandbox client — Funding (Orders authorize).
 
 urllib only. Credentials are read from the environment at runtime; they are
 never stored in this file, never printed, never logged. Money-path calls are
@@ -144,7 +144,7 @@ class _BufferedResponse:
 def _urlopen_with_error_handling(req: urllib.request.Request):
     """Open a URL with comprehensive error handling for transport-level failures."""
     try:
-        # Timeout 120s (raised from 30s at the Slice 2.8 build,
+        # Timeout 120s (raised from 30s,
         # 2026-10-09): under parallel sandbox load the egress
         # regularly answers money POSTs after >30s. A 30s client
         # timeout then looks like a transport failure, the caller's
@@ -450,7 +450,7 @@ def _post_with_retry(path: str, token: str, body: Optional[Dict] = None,
             # well have executed at PayPal. It must surface as
             # CONNECT_ERROR so the single safe retry below replays
             # the call under its stable PayPal-Request-Id and returns
-            # the original result. (Found live 2026-10-09, slice 2.8:
+            # the original result. (Found live 2026-10-09:
             # a trust-credit advance capture landed at PayPal, its
             # response body was cut, the raw IncompleteRead escaped
             # unretried, and the unrecorded capture wedged the job.)
@@ -468,7 +468,7 @@ def _post_with_retry(path: str, token: str, body: Optional[Dict] = None,
 def capture_authorization(auth_id: str, job_id: str,
                           token: Optional[str] = None
                           ) -> Tuple[str, str, int, str]:
-    """Slice 1.5: capture the full held amount of an authorization.
+    """capture the full held amount of an authorization.
 
     Returns (capture_id, capture_status, captured_amount_cents,
     currency). Idempotency header: bulwark-capture-<installation>-<job_id>."""
@@ -485,7 +485,7 @@ def capture_authorization(auth_id: str, job_id: str,
     if capture_id and not cents:
         # The capture POST response can omit the amount — GET the
         # capture resource, which always carries it (observed
-        # 2026-10-08, slice 1.5 self-test: POST returned no amount).
+        # 2026-10-08: POST returned no amount).
         got = get_capture(capture_id, token)
         status = got.get('status', status) or status
         gamt = got.get('amount', {}) or {}
@@ -500,7 +500,7 @@ def capture_authorization_amount(auth_id: str, job_id: str,
                                  final_capture: bool, tag: str,
                                  token: Optional[str] = None
                                  ) -> Tuple[str, str, int, str]:
-    """Slice 2.4 (trust credit): capture a SPECIFIC amount of an
+    """(trust credit): capture a SPECIFIC amount of an
     authorization. `final_capture=False` leaves the remainder capturable
     (proven on this sandbox by factory/probe_2_4_partial_capture.py:
     $0.50 non-final + $1.50 final on one $2.00 authorization, both
@@ -548,7 +548,7 @@ def get_capture(capture_id: str, token: Optional[str] = None
 def create_payouts(job_id: str, items: list, currency: str = 'USD',
                    token: Optional[str] = None,
                    batch_tag: str = '') -> Tuple[str, list]:
-    """Slice 1.5: one Payouts batch with the three split items.
+    """one Payouts batch with the three split items.
 
     `items` is a list of dicts: {party, receiver, amount_cents}.
     Returns (payout_batch_id, [{party, receiver, amount_cents,
@@ -584,7 +584,7 @@ def create_payouts(job_id: str, items: list, currency: str = 'USD',
         data = _post_with_retry('/v1/payments/payouts', token, body=body,
                                 request_id=_idem("payouts", job_id, batch_tag))
     except PayPalError as e:
-        # Duplicate-batch case (2026-10-09, slice 2.8): if an earlier
+        # Duplicate-batch case (2026-10-09): if an earlier
         # attempt DID create the batch at PayPal but its response never
         # reached us (transport drop on a slow route), the retry is
         # refused with "Batch with given sender_batch_id already
@@ -880,7 +880,7 @@ def create_or_adopt_payouts(job_id: str, items: list,
 
 def void_authorization(auth_id: str, job_id: str,
                        token: Optional[str] = None) -> str:
-    """Slice 1.6: void an uncaptured authorization (refund path).
+    """void an uncaptured authorization (refund path).
     Returns the authorization status PayPal reports after the void.
     Idempotency header: bulwark-void-<installation>-<job_id>."""
     if token is None:
@@ -894,7 +894,7 @@ def void_authorization(auth_id: str, job_id: str,
 def refund_capture(capture_id: str, job_id: str, amount_cents: int,
                     currency: str = 'USD', token: Optional[str] = None,
                     suffix: str = "") -> Tuple[str, str]:
-    """Slice 1.6 (defensive path): refund a capture in full.
+    """(defensive path): refund a capture in full.
     Returns (refund_id, refund_status). Idempotency header:
     bulwark-refund-<installation>-<job_id>[-{suffix}]."""
     if token is None:

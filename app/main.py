@@ -80,7 +80,7 @@ from app.config import (
 
 BULWARK_PORT = int(os.environ.get('BULWARK_PORT', 8077))
 HOST = '127.0.0.1'
-MAX_FILE_SIZE = 25 * 1024 * 1024  # 25 MB per file (Slice 1.3)
+MAX_FILE_SIZE = 25 * 1024 * 1024  # 25 MB per file
 
 def parse_criteria_from_form(form_data):
     criteria = []
@@ -215,7 +215,7 @@ def _sanitize_filename(filename: str) -> str:
     return filename
 
 def backfill_events(job) -> None:
-    """Slice 1.7: jobs created before the event table existed get their
+    """jobs created before the event table existed get their
     timeline synthesized ONCE from the stored fields (source='backfill',
     original timestamps preserved). No-op when events already exist."""
     if get_events(job.id):
@@ -382,7 +382,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'Not Found')
 
     def serve_dashboard(self):
-        """Slice 2.7: money-state dashboard. Rows are prepared once,
+        """money-state dashboard. Rows are prepared once,
         here, and are the single source for the AG Grid JSON, the
         server-rendered fallback table, and the per-state totals —
         so the three can never disagree."""
@@ -482,11 +482,11 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode('utf-8'))
 
-    # -- Slice 2.8: demo cast --------------------------------------
+    # -- demo cast --------------------------------------
     def _demo_actor(self):
         """The visitor's demo role, from the bw_actor cookie (set by
         the boards (/c, /w)). Bulwark has no accounts; the cookie
-        picks the seat the visitor is playing, and since v5.7 the
+        picks the seat the visitor is playing, and the
         job page shows that side's controls at that side's desk —
         the service layer remains the only enforcement."""
         raw = self.headers.get('Cookie', '') or ''
@@ -505,7 +505,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
     def _current_view(self):
         """Get the visitor's view from the bw_view cookie (set by
         the one-click switcher on /c or /w). Bulwark has no
-        accounts; since v5.7 the view also selects which side's
+        accounts; the view also selects which side's
         controls a job page renders (UI separation only — the
         service layer enforces every action)."""
         raw = self.headers.get('Cookie', '') or ''
@@ -519,7 +519,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         return 'client'
 
     def _context_view(self):
-        """v5.1: the context a shared page inherits — the bw_view
+        """the context a shared page inherits — the bw_view
         cookie when it names a board ('client'/'worker'), else
         'door'. Unlike _current_view this NEVER invents a role:
         no cookie means the neutral door context."""
@@ -696,8 +696,8 @@ class BulwarkHandler(BaseHTTPRequestHandler):
 
     def handle_demo_actor(self):
         """POST /demo/actor — seat the visitor as one of the
-        three demo cast parties (v5.3). The bw_actor cookie
-        picks the seat being played (and, since v5.7, which
+        three demo cast parties. The bw_actor cookie
+        picks the seat being played (and, which
         side's desk the job pages render); the service layer
         enforces every action. Invalid ids change nothing."""
         length = int(self.headers.get('Content-Length', 0) or 0)
@@ -756,7 +756,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         # background and say so on the page instead of showing a
         # bare empty board.
         maybe_start_auto_seed()
-        # Slice 2.8: archived demo runs are hidden from the board.
+        # archived demo runs are hidden from the board.
         jobs = [j for j in list_jobs() if j.demo_tag != 'archived']
         if state_filter:
             jobs = [j for j in jobs
@@ -764,7 +764,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
                     or (state_filter == 'checked'
                         and j.state in ('checked_pass', 'checked_fail',
                                         'revision'))]
-        # Both boards list the SAME jobs (v5.7 role separation):
+        # Both boards list the SAME jobs (role separation):
         # the worker board used to keep only posted jobs, which hid
         # a job's progress from the worker's desk — now each side
         # sees every job and advances it with its own controls on
@@ -777,7 +777,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             notice = ("Demo content is being prepared — the sample "
                       "projects will appear here shortly.")
         
-        # Compute counters for the home page (Item D.1)
+        # Compute counters for the home page
         # Mapping: Held = 'funded-held' + 'delivered'; Being checked = 'checking';
         # Paid out = 'released'; Refunded = 'refunded'
         held = 0
@@ -803,7 +803,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             'refunded': refunded
         }
         
-        # Compute latest certificate (Item D.2)
+        # Compute latest certificate
         latest_cert = None
         for job in jobs:
             cert = get_certificate_by_job(job.id)
@@ -822,7 +822,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             'refunded': {'amount': refunded, 'formatted': _fmt_cents(refunded)}
         }
         
-        # Board role strip (v5.3): name the seat this board
+        # Board role strip: name the seat this board
         # shows — the board's own seating rule decides it.
         if variant == 'client':
             actor_party = get_party_by_name("Mira's Shop")
@@ -856,7 +856,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.wfile.write(html.encode('utf-8'))
 
     def serve_entry(self):
-        """Slice 2: the entry page (door) — door nav, hero, chooser, counters grid,
+        """the entry page (door) — door nav, hero, chooser, counters grid,
         latest certificate card, footer lines. NO job list, NO filter chips, NO rails, NO Post a job.
         """
         maybe_start_auto_seed()
@@ -908,7 +908,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             f'<a href="/dashboard" class="counter-card"><div class="counter-value">{_fmt_cents(refunded)}</div><div class="counter-label">Refunded</div></a>',
             '</div>',
         ]
-        # Always show the latest-certificate card (Item D.2)
+        # Always show the latest-certificate card
         # In empty DB show calm placeholder; in populated case show real certificate
         if latest_cert:
             parts.append(
@@ -1261,7 +1261,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode('utf-8'))
 
-    # -- Slice 1.5/1.7 helpers -------------------------------------------
+    # -- helpers -------------------------------------------
     def _refresh_payout_statuses(self, job):
         """Refresh payout item statuses (and item ids) from PayPal
         (best effort; stored values are shown verbatim when the GET
@@ -1295,7 +1295,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         return job
 
     def _reconcile(self, job, record: bool = False) -> str:
-        """Slice 1.7 fallback reconciliation: compare the local money
+        """fallback reconciliation: compare the local money
         state with PayPal's own record (cheap GETs only). Returns the
         sync note for the page; a contradiction is flagged as a
         timeline event, never silently overwritten."""
@@ -1317,7 +1317,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         if job.state == 'refunded' and job.capture_id:
             expected = 'CAPTURED'  # refund-of-capture path
         if job.trust_credit_state == 'advanced' and job.state == 'checked_pass':
-            # Slice 2.4: a trust-credit advance partially captures the
+            # a trust-credit advance partially captures the
             # authorization at acceptance — PARTIALLY_CAPTURED is the
             # CORRECT PayPal state until settlement captures the rest.
             expected = 'PARTIALLY_CAPTURED'
@@ -1338,7 +1338,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         return f"State verified against PayPal at {now}."
 
     def handle_check(self, path):
-        """Run the checker via the shared service layer (Slice 2.9):
+        """Run the checker via the shared service layer:
         the same code path serves the JSON API. Refusals and verdict
         handling (dual mode, trust credit, final-FAIL auto-refund)
         live in app.service.check_job_action."""
@@ -1363,7 +1363,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'')
 
     def handle_appeal(self, path):
-        """Slice 2.3: ONE appeal after a final FAIL verdict. A senior
+        """ONE appeal after a final FAIL verdict. A senior
         re-check by the OTHER judge model decides; its verdict is
         final (a second appeal is refused with 409 and changes
         nothing)."""
@@ -1412,7 +1412,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
                 f"{type(e).__name__}: {e}"))
             return
         if getattr(v, 'incomplete', False):
-            # v5.6 (F1): the senior judge was unavailable — the
+            # the senior judge was unavailable — the
             # appeal is NOT decided and NOT consumed.
             job = get_job(job_id)
             self._render_detail(job, info_message=(
@@ -1436,14 +1436,14 @@ class BulwarkHandler(BaseHTTPRequestHandler):
     def _maybe_advance_trust_credit(self, job):
         return _svc_maybe_advance_trust_credit(job)
 
-    # -- Slice 1.5: settlement -------------------------------------------
+    # -- settlement -------------------------------------------
     def _split_items(self, job, captured_cents: int):
         return _svc_split_items(job, captured_cents)
 
     def _do_payouts(self, job):
         return _svc_do_payouts(job)
 
-    # -- Slice 2.5: checker-fee vesting + dispute window ------------------
+    # -- checker-fee vesting + dispute window ------------------
     def _start_vesting(self, job, checker_amount_cents: int):
         return _svc_start_vesting(job, checker_amount_cents)
 
@@ -1559,7 +1559,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
                 "No open dispute to resolve on this job."))
             return
         # Senior re-check: the judge model that did NOT issue the
-        # latest verdict (the Slice 2.3 appeal machinery).
+        # latest verdict (the appeal machinery).
         verdicts = get_verdicts(job_id)
         last_model = verdicts[-1].get('judged_model', '') if verdicts else ''
         senior = (JUDGE_FALLBACK_MODEL if last_model == JUDGE_MODEL
@@ -1572,7 +1572,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
                 f"Dispute re-check failed: {e}"))
             return
         if getattr(verdict, 'incomplete', False):
-            # v5.6 (F1): the senior judge was unavailable — the
+            # the senior judge was unavailable — the
             # dispute stays open; nothing was decided or paid.
             self._render_detail(get_job(job_id), info_message=(
                 "Dispute re-check could not be completed — the AI "
@@ -1952,7 +1952,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.wfile.write(html.encode('utf-8'))
 
     def handle_settle(self, path):
-        """Settle via the shared service layer (Slice 2.9)."""
+        """Settle via the shared service layer."""
         parts = path.strip('/').split('/')
         job_id = int(parts[1])
         job = get_job(job_id)
@@ -1980,7 +1980,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'')
 
-    # -- Slice 1.6: revision + refund -------------------------------------
+    # -- revision + refund -------------------------------------
     def _do_refund(self, job, actor: str):
         return _svc_do_refund(job, actor)
 
@@ -2073,7 +2073,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
                 "Revision is only available on jobs in the "
                 "'checked_fail' state."))
             return
-        # Slice 2.3 (brief): a FRAUD verdict skips the revision
+        # (brief): a FRAUD verdict skips the revision
         # window entirely — the job goes straight to the refund
         # path (client reject). Guard added at the 2.8 build, when
         # the demo fraud story exposed that the route had no
@@ -2133,7 +2133,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'')
 
-    # -- Slice 1.7: webhook endpoint + explicit verify --------------------
+    # -- webhook endpoint + explicit verify --------------------
     def handle_webhook(self):
         content_length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_length) if content_length else b''
@@ -2204,7 +2204,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         return
 
     def handle_fund(self, path):
-        """Fund via the shared service layer (Slice 2.9): authorize +
+        """Fund via the shared service layer: authorize +
         Settlement Brain terms, identical for UI and API callers."""
         parts = path.strip('/').split('/')
         if len(parts) < 2:
@@ -2250,7 +2250,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'')
 
     def handle_deliver(self, path):
-        """Deliver via the shared service layer (Slice 2.9); this
+        """Deliver via the shared service layer; this
         wrapper only parses the multipart form."""
         parts = path.strip('/').split('/')
         if len(parts) < 2:
@@ -2533,7 +2533,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         worker_raw = form_data.get('worker_id', [''])[0]
         checker_raw = form_data.get('checker_id', [''])[0]
 
-        # Form rule (Kiss): a failed submission re-renders the
+        # Form rule: a failed submission re-renders the
         # form with everything preserved, the problem fields
         # marked in red with a human message under each, and a
         # summary at the top — never a bare error or a dead end.
@@ -2561,7 +2561,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
                 "Missing: at least 3 complete acceptance criteria "
                 "(name, comparison, expected value and type on "
                 "each row).")
-        # Party pickers submit party ids (Slice 2.1); validate the kind
+        # Party pickers submit party ids; validate the kind
         # and fall back to the built-in parties when missing/invalid.
         def _party_id(raw, kind, default):
             try:
@@ -2576,7 +2576,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         if circle not in ('invited', 'open', 'both'):
             circle = 'invited'
         
-        # Form rule (Kiss): when circle is 'invited' or 'both', the worker
+        # Form rule: when circle is 'invited' or 'both', the worker
         # field must name a real worker party — else error
         if circle in ('invited', 'both'):
             validated_worker_id = _party_id(worker_raw, 'worker', 0)
@@ -2651,7 +2651,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         if sample_template_id:
             attach_sample_template(job, sample_template_id)
     
-    # -- Slice 2.9: JSON API (agent service layer) ----------------------
+    # -- JSON API (agent service layer) ----------------------
     def _api_send(self, status, payload):
         body = json.dumps(payload).encode('utf-8')
         self.send_response(status)
@@ -2919,7 +2919,7 @@ class BulwarkHandler(BaseHTTPRequestHandler):
         except ServiceError as e:
             self._api_send(e.http_status, {"error": e.message})
 
-    # -- Slice 2.9: integrator machine view + API key issuance ---------
+    # -- integrator machine view + API key issuance ---------
     def serve_machine(self, path):
         parts = path.strip('/').split('/')
         if len(parts) < 2:

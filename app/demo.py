@@ -1,4 +1,4 @@
-"""Slice 2.8 — the demo cast: three stories as built-in demo data.
+"""the demo cast: three stories as built-in demo data.
 
 Reset (POST /demo/reset) ensures the demo parties exist (by name,
 idempotent), archives the previous run's demo jobs, and creates the
@@ -116,7 +116,7 @@ def attach_sample_template(job, template_id):
 # The cast are SPECIALISTS and the work is specialist work — the
 # kind a client only hands to a credentialed party, at amounts
 # where escrow and the checker-as-insurer actually matter
-# (Kiss's direction, 2026-10-10). Every fixture honestly passes
+#. Every fixture honestly passes
 # or fails the deterministic acceptance test it is measured
 # against; the stories run on the real flows only.
 STORIES = [
@@ -594,7 +594,7 @@ def seed_history():
 
 
 # --- Ready-made job (judge-friendly trial path) ----------------------
-# Kiss's requirement: a judge cannot be expected to invent a job AND
+# a judge cannot be expected to invent a job AND
 # author a conforming document before Bulwark does anything. The
 # /demo page therefore offers ONE ready-made job — fully filled in,
 # in posted state — whose acceptance test the demo sample generator

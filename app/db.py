@@ -89,7 +89,7 @@ def ensure_db() -> None:
         )
         """
     )
-    # --- Migration: add PayPal vault columns (Slice 1.2) ---
+    # --- Migration: add PayPal vault columns ---
     # Migration-safe: only add columns that do not already exist.
     cols = {row[1] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
     alters = {
@@ -107,7 +107,7 @@ def ensure_db() -> None:
             "ALTER TABLE jobs ADD COLUMN funded_at TEXT DEFAULT ''",
         'paypal_error':
             "ALTER TABLE jobs ADD COLUMN paypal_error TEXT DEFAULT ''",
-        # --- Slice 1.5: settlement columns ---
+        # --- settlement columns ---
         'capture_id':
             "ALTER TABLE jobs ADD COLUMN capture_id TEXT DEFAULT ''",
         'capture_status':
@@ -126,7 +126,7 @@ def ensure_db() -> None:
             "ALTER TABLE jobs ADD COLUMN settled_at TEXT DEFAULT ''",
         'settle_error':
             "ALTER TABLE jobs ADD COLUMN settle_error TEXT DEFAULT ''",
-    # --- Slice 1.6: refund / revision columns ---
+    # --- refund / revision columns ---
     'refund_id':
         "ALTER TABLE jobs ADD COLUMN refund_id TEXT DEFAULT ''",
     'refund_status':
@@ -135,7 +135,7 @@ def ensure_db() -> None:
         "ALTER TABLE jobs ADD COLUMN refunded_at TEXT DEFAULT ''",
     'revision_used':
         "ALTER TABLE jobs ADD COLUMN revision_used INTEGER DEFAULT 0",
-    # --- Slice 2.2: Settlement Brain storage ---
+    # --- Settlement Brain storage ---
     'terms_verification_mode':
         "ALTER TABLE jobs ADD COLUMN terms_verification_mode TEXT DEFAULT ''",
     'terms_vesting_hours':
@@ -150,7 +150,7 @@ def ensure_db() -> None:
         "ALTER TABLE jobs ADD COLUMN brain_model TEXT DEFAULT ''",
     'brain_degraded':
         "ALTER TABLE jobs ADD COLUMN brain_degraded INTEGER DEFAULT 0",
-    # --- Slice 2.4: trust credit storage ---
+    # --- trust credit storage ---
     'trust_credit_state':
         "ALTER TABLE jobs ADD COLUMN trust_credit_state TEXT DEFAULT ''",
     'advance_capture_id':
@@ -161,7 +161,7 @@ def ensure_db() -> None:
         "ALTER TABLE jobs ADD COLUMN advanced_cents INTEGER DEFAULT 0",
     'advance_payout_items':
         "ALTER TABLE jobs ADD COLUMN advance_payout_items TEXT DEFAULT ''",
-    # --- Slice 2.5: checker-fee vesting + dispute window ---
+    # --- checker-fee vesting + dispute window ---
     'checker_vesting_state':
         "ALTER TABLE jobs ADD COLUMN checker_vesting_state TEXT DEFAULT ''",
     'checker_vesting_amount_cents':
@@ -180,13 +180,13 @@ def ensure_db() -> None:
         "ALTER TABLE jobs ADD COLUMN dispute_opened_at TEXT DEFAULT ''",
     'dispute_resolved_at':
         "ALTER TABLE jobs ADD COLUMN dispute_resolved_at TEXT DEFAULT ''",
-    # --- Slice 2.8: demo cast tagging ('' | active | archived) ---
+    # --- demo cast tagging ('' | active | archived) ---
     'demo_tag':
         "ALTER TABLE jobs ADD COLUMN demo_tag TEXT DEFAULT ''",
     # --- Price negotiation: 'fixed' | 'open' (posted without a price) ---
     'price_mode':
         "ALTER TABLE jobs ADD COLUMN price_mode TEXT DEFAULT 'fixed'",
-    # --- Slice 5.2: circle × price posting model ---
+    # --- circle × price posting model ---
     'circle':
         "ALTER TABLE jobs ADD COLUMN circle TEXT DEFAULT ''",
     'invited_worker_id':
@@ -196,12 +196,12 @@ def ensure_db() -> None:
         if col not in cols:
             conn.execute(sql)
 
-    # --- Migration: deliveries.is_revision (Slice 1.6) ---
+    # --- Migration: deliveries.is_revision ---
     dcols = {row[1] for row in conn.execute("PRAGMA table_info(deliveries)").fetchall()}
     if dcols and "is_revision" not in dcols:
         conn.execute("ALTER TABLE deliveries ADD COLUMN is_revision INTEGER DEFAULT 0")
 
-    # --- Slice 1.7: job_events (timeline / audit trail) ---
+    # --- job_events (timeline / audit trail) ---
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS job_events (
@@ -221,7 +221,7 @@ def ensure_db() -> None:
         "ON job_events(job_id)"
     )
 
-    # --- Slice 2.1: parties & reputation (foundation) ---
+    # --- parties & reputation (foundation) ---
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS parties (
@@ -350,7 +350,7 @@ def _ensure_offers_table(conn: sqlite3.Connection) -> None:
 
 
 def _ensure_deliveries_table(conn: sqlite3.Connection) -> None:
-    """Migration: deliveries table (Slice 1.3)."""
+    """Migration: deliveries table."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS deliveries (
@@ -374,7 +374,7 @@ def _ensure_deliveries_table(conn: sqlite3.Connection) -> None:
 
 
 def _ensure_checks_table(conn: sqlite3.Connection) -> None:
-    """Migration: checks table (Slice 1.4) — stores the itemized verdict."""
+    """Migration: checks table — stores the itemized verdict."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS checks (
@@ -397,7 +397,7 @@ def _ensure_checks_table(conn: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_checks_job_id "
         "ON checks(job_id)"
     )
-    # Slice 2.6: birth certificates for settled jobs.
+    # birth certificates for settled jobs.
     conn.execute(
         """CREATE TABLE IF NOT EXISTS certificates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -408,7 +408,7 @@ def _ensure_checks_table(conn: sqlite3.Connection) -> None:
             facts_json TEXT
         )"""
     )
-    # Slice 2.9: service-call log (API + UI money actions) and
+    # service-call log (API + UI money actions) and
     # per-party API keys (hashed at rest; plaintext shown once).
     conn.execute(
         """CREATE TABLE IF NOT EXISTS service_calls (
@@ -450,7 +450,7 @@ def _ensure_checks_table(conn: sqlite3.Connection) -> None:
 
 def _checks_row_to_verdict(row) -> Optional[Dict]:
     """Build a verdict dict from a checks row READ BY COLUMN NAME
-    (Slice 2.3: same migration-history lesson as the jobs table — the
+    (same migration-history lesson as the jobs table — the
     checks table grew columns by ALTER in different eras, so positional
     reads are unsafe. Callers pass sqlite3.Row rows.)"""
     if row is None:
@@ -527,8 +527,8 @@ def store_verdict(verdict) -> int:
     conn = sqlite3.connect(get_db_path())
     _ensure_checks_table(conn)
     
-    # Check if this is the first verdict for this job. v5.6
-    # (F1): incomplete runs (judge unavailable) are stored for
+    # Check if this is the first verdict for this job.
+    # incomplete runs (judge unavailable) are stored for
     # the record but are not verdicts for reputation purposes —
     # the "first verdict" below means the first COMPLETED one,
     # so a completed check after an incomplete attempt still
@@ -569,7 +569,7 @@ def store_verdict(verdict) -> int:
     checker_party_id = job_row[1] if job_row and job_row[1] else 3  # default to Verifier Prime
     
     # Emit reputation events exactly once (only on first verdict).
-    # Slice 2.3: dual/appeal runs suppress this and emit the combined /
+    # dual/appeal runs suppress this and emit the combined /
     # final outcome themselves via emit_verdict_events.
     if completed_count == 0 and not getattr(verdict, "suppress_first_events", False) and not getattr(verdict, "incomplete", False):
         verdict_kind = "pass" if verdict.overall_pass else "fail"
@@ -611,7 +611,7 @@ def latest_verdict(job_id: int) -> Optional[Dict]:
 
 
 def set_job_checked(job_id: int, passed: bool) -> Job:
-    """Transition job state to checked_pass / checked_fail (Slice 1.4)."""
+    """Transition job state to checked_pass / checked_fail."""
     state = "checked_pass" if passed else "checked_fail"
     conn = sqlite3.connect(get_db_path())
     conn.execute(
@@ -624,7 +624,7 @@ def set_job_checked(job_id: int, passed: bool) -> Job:
 
 
 def count_appeals(job_id: int) -> int:
-    """How many appeal verdicts exist for a job (Slice 2.3)."""
+    """How many appeal verdicts exist for a job."""
     conn = sqlite3.connect(get_db_path())
     _ensure_checks_table(conn)
     n = conn.execute(
@@ -638,7 +638,7 @@ def count_appeals(job_id: int) -> int:
 def emit_reputation_event_once(party_id: int, job_id: int, kind: str,
                                detail: Optional[dict] = None) -> bool:
     """Insert a reputation event unless the same (party, job, kind)
-    already exists. Returns True when inserted. Slice 2.3 (dual/appeal/
+    already exists. Returns True when inserted. (dual/appeal/
     fraud paths must not double-emit)."""
     conn = sqlite3.connect(get_db_path())
     ensure_db()
@@ -684,7 +684,7 @@ def emit_verdict_events(job_id: int, passed: bool) -> None:
 def _row_to_job(row) -> Job:
     """Build a Job from a sqlite3.Row (or dict) read BY COLUMN NAME.
 
-    Slice 2.2 gate fix: the jobs table's physical column ORDER depends
+    gate fix: the jobs table's physical column ORDER depends
     on the database's migration history (each era's ALTERs append in
     the order that era first ran), so positional reads silently swap
     fields on databases created in a different era (observed: terms
@@ -831,7 +831,7 @@ def create_job(title: str, description: str, price_cents: int, currency: str,
          client_id, worker_id, checker_id, price_mode, circle, invited_worker_id),
     )
     job_id = cursor.lastrowid
-    # Slice 2.1: the client party gains a jobs_posted reputation event.
+    # the client party gains a jobs_posted reputation event.
     conn.execute(
         "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
         (client_id, job_id, "jobs_posted", json.dumps({}), created_at),
@@ -843,7 +843,7 @@ def create_job(title: str, description: str, price_cents: int, currency: str,
 
 def set_job_trust_credit(job_id: int, capture_id: str, batch_id: str,
                          items: list, advanced_cents: int) -> Job:
-    """Slice 2.4: record a trust-credit advance (partial capture + the
+    """record a trust-credit advance (partial capture + the
     worker's advance payout batch) on the job."""
     conn = sqlite3.connect(get_db_path())
     conn.execute(
@@ -865,7 +865,7 @@ def set_job_trust_credit(job_id: int, capture_id: str, batch_id: str,
 
 
 def set_checker_vesting(job_id: int, amount_cents: int, release_at: str) -> None:
-    """Slice 2.5: record the checker fee as vesting at settle time."""
+    """record the checker fee as vesting at settle time."""
     conn = sqlite3.connect(get_db_path())
     ensure_db()
     conn.execute(
@@ -964,7 +964,7 @@ def set_job_paypal_error(job_id: int, message: str) -> Job:
 def add_delivery(job_id: int, filename: str, stored_name: str,
                  size_bytes: int, sha256: str, note: str = "",
                  is_revision: bool = False) -> None:
-    """Record a delivered file in the DB (Slice 1.3). Does NOT change job
+    """Record a delivered file in the DB. Does NOT change job
     state — the caller advances state to `delivered` separately so the two
     operations are explicit and ordered."""
     from datetime import datetime, timezone
@@ -1013,13 +1013,13 @@ def get_deliveries(job_id: int) -> List[Delivery]:
 
 
 def set_job_delivered(job_id: int) -> Job:
-    """Advance a job to `delivered` (Slice 1.3). Money does NOT move."""
+    """Advance a job to `delivered`. Money does NOT move."""
     conn = sqlite3.connect(get_db_path())
     conn.execute(
         "UPDATE jobs SET state = 'delivered' WHERE id = ?",
         (job_id,),
     )
-    # Slice 2.1: the worker party gains a jobs_delivered reputation event.
+    # the worker party gains a jobs_delivered reputation event.
     job_row = conn.execute(
         "SELECT worker_id FROM jobs WHERE id = ?", (job_id,)
     ).fetchone()
@@ -1034,7 +1034,7 @@ def set_job_delivered(job_id: int) -> Job:
 
 
 # ---------------------------------------------------------------------------
-# Slice 1.5 — settlement storage
+# settlement storage
 # ---------------------------------------------------------------------------
 def _now() -> str:
     from datetime import datetime, timezone
@@ -1138,7 +1138,7 @@ def update_payout_items(job_id: int, payout_items) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slice 1.6 — refund / revision storage
+# refund / revision storage
 # ---------------------------------------------------------------------------
 def set_job_refunded(job_id: int, refund_id: str, refund_status: str) -> Job:
     """Set job state to 'refunded' and emit job_refunded_final reputation
@@ -1190,7 +1190,7 @@ def set_revision_used(job_id: int) -> Job:
 
 
 # ---------------------------------------------------------------------------
-# Slice 1.7 — job events (timeline / audit trail)
+# job events (timeline / audit trail)
 # ---------------------------------------------------------------------------
 def add_event(job_id: int, kind: str, actor: str = "", source: str = "action",
               detail: Optional[dict] = None, created_at: str = "") -> int:
@@ -1361,7 +1361,7 @@ def get_party_events(party_id: int) -> List[Dict]:
 def create_party(name: str, kind: str, form: str,
                  payout_email: str = "",
                  certifications: Optional[list] = None) -> int:
-    """Insert a user-added party (Slice 2.1) and return its id."""
+    """Insert a user-added party and return its id."""
     conn = sqlite3.connect(get_db_path())
     cols = {row[1] for row in conn.execute(
         "PRAGMA table_info(parties)").fetchall()}
@@ -1400,7 +1400,7 @@ def set_party_certifications(party_id: int,
 
 
 # ---------------------------------------------------------------------------
-# Slice 2.6: birth certificates
+# birth certificates
 # ---------------------------------------------------------------------------
 def _issue_certificate(conn, job_id: int) -> None:
     """Issue the job's birth certificate exactly once, inside the
@@ -1501,7 +1501,7 @@ def list_certificates_for_worker(party_id: int):
 
 
 # ---------------------------------------------------------------------------
-# Slice 2.8: demo cast storage helpers
+# demo cast storage helpers
 # ---------------------------------------------------------------------------
 def set_job_demo_tag(job_id: int, tag: str) -> None:
     conn = sqlite3.connect(get_db_path())
@@ -1703,7 +1703,7 @@ def get_prepared_file(job_id: int):
     return row[0], bytes(row[1])
 
 
-# --- Slice 2.9: service-call log + party API keys --------------------
+# --- service-call log + party API keys --------------------
 
 def log_service_call(job_id, actor: str, via: str, action: str,
                      endpoint: str, request_summary: str,

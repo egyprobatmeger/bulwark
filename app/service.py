@@ -1,4 +1,4 @@
-"""Slice 2.9: the shared service layer.
+"""the shared service layer.
 
 UI handlers and the JSON API handlers call THESE functions for
 create / fund / deliver / check / settle, so both channels run the
@@ -295,7 +295,7 @@ def split_items(job, captured_cents: int):
 
 def do_payouts(job):
     """Run (or resume) ONLY the payouts leg for a captured job.
-    Slice 2.5: the checker's fee is recorded as vesting, not paid.
+    the checker's fee is recorded as vesting, not paid.
     Returns True when the payouts batch was RECOVERED (an existing
     PayPal batch adopted after a lost create response) rather than
     freshly created."""
@@ -528,7 +528,7 @@ def reconcile_advance_capture(job):
 
 
 def maybe_advance_trust_credit(job):
-    """Slice 2.4: when a job reaches checked_pass and its stored
+    """when a job reaches checked_pass and its stored
     terms grant trust credit, immediately capture that percent of
     the WORKER's share (partial capture, remainder stays held) and
     pay it out to the worker. Any failure is recorded as an event
@@ -888,7 +888,7 @@ def check_job_action(job_id, *, via, actor, endpoint):
         raise ServiceError(msg, 502)
     job = get_job(job_id)
     if getattr(verdict, 'incomplete', False):
-        # v5.6 (F1): the judge was unavailable — nothing was
+        # the judge was unavailable — nothing was
         # decided. Record the incomplete attempt on the timeline
         # and surface it; no verdict event, no trust credit, no
         # refund, and the job stays in 'delivered'.
