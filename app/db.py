@@ -256,6 +256,34 @@ def ensure_db() -> None:
         "CREATE INDEX IF NOT EXISTS idx_reputation_events_job_id "
         "ON reputation_events(job_id)"
     )
+    # Reputation events are once-per-(party, job, kind) by design
+    # (the counters are plain row counts), but the emissions were
+    # check-then-insert or unconditional inserts, so two concurrent
+    # closings of the same job double-counted it. Enforce once-only
+    # in the schema: collapse any duplicate rows (keeping the
+    # earliest of each triple), then a unique index makes every
+    # emission atomic — the call sites use INSERT OR IGNORE, so a
+    # racing duplicate is a no-op, never an error and never a
+    # second count. One-time migration: it runs only while the
+    # unique index does not exist yet.
+    _rep_once_idx = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'index' "
+        "AND name = 'idx_reputation_events_once'"
+    ).fetchone()
+    if _rep_once_idx is None:
+        conn.execute(
+            "DELETE FROM reputation_events WHERE id NOT IN "
+            "(SELECT MIN(id) FROM reputation_events "
+            "GROUP BY party_id, job_id, kind)"
+        )
+        conn.execute(
+            "CREATE UNIQUE INDEX idx_reputation_events_once "
+            "ON reputation_events(party_id, job_id, kind)"
+        )
+        # Commit now: the DELETE above opened an implicit
+        # transaction, and the seed block below issues its own
+        # explicit BEGIN TRANSACTION.
+        conn.commit()
 
     # Seed built-in parties idempotently
     conn.execute("BEGIN TRANSACTION")
@@ -575,14 +603,14 @@ def store_verdict(verdict) -> int:
         verdict_kind = "pass" if verdict.overall_pass else "fail"
         # Worker gets verdict_pass_first or verdict_fail_first
         conn.execute(
-            "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
             (worker_party_id, verdict.job_id, 
              "verdict_pass_first" if verdict.overall_pass else "verdict_fail_first",
              json.dumps({}), _now())
         )
         # Checker gets verdict_issued
         conn.execute(
-            "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
             (checker_party_id, verdict.job_id, "verdict_issued",
              json.dumps({}), _now())
         )
@@ -639,25 +667,24 @@ def emit_reputation_event_once(party_id: int, job_id: int, kind: str,
                                detail: Optional[dict] = None) -> bool:
     """Insert a reputation event unless the same (party, job, kind)
     already exists. Returns True when inserted. (dual/appeal/
-    fraud paths must not double-emit)."""
+    fraud paths must not double-emit).
+
+    The old SELECT-then-INSERT let two concurrent callers both
+    pass the existence check and both insert. The insert is now a
+    single INSERT OR IGNORE against the unique (party_id, job_id,
+    kind) index — atomic, so exactly one racer inserts and the
+    other is a no-op."""
     conn = sqlite3.connect(get_db_path())
     ensure_db()
-    exists = conn.execute(
-        "SELECT COUNT(*) FROM reputation_events "
-        "WHERE party_id = ? AND job_id = ? AND kind = ?",
-        (party_id, job_id, kind),
-    ).fetchone()[0]
-    if exists:
-        conn.close()
-        return False
-    conn.execute(
-        "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) "
+    cur = conn.execute(
+        "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) "
         "VALUES (?, ?, ?, ?, ?)",
         (party_id, job_id, kind, json.dumps(detail or {}), _now()),
     )
     conn.commit()
+    inserted = cur.rowcount == 1
     conn.close()
-    return True
+    return inserted
 
 
 def emit_verdict_events(job_id: int, passed: bool) -> None:
@@ -833,7 +860,7 @@ def create_job(title: str, description: str, price_cents: int, currency: str,
     job_id = cursor.lastrowid
     # the client party gains a jobs_posted reputation event.
     conn.execute(
-        "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
         (client_id, job_id, "jobs_posted", json.dumps({}), created_at),
     )
     conn.commit()
@@ -1025,7 +1052,7 @@ def set_job_delivered(job_id: int) -> Job:
     ).fetchone()
     worker_party_id = job_row[0] if job_row and job_row[0] else 2
     conn.execute(
-        "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
         (worker_party_id, job_id, "jobs_delivered", json.dumps({}), _now()),
     )
     conn.commit()
@@ -1091,7 +1118,7 @@ def set_job_settled(job_id: int, payout_batch_id: str, payout_items) -> Job:
     
     # Emit job_settled reputation event for worker party
     conn.execute(
-        "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
         (worker_party_id, job_id, "job_settled", json.dumps({}), _now())
     )
     _issue_certificate(conn, job_id)
@@ -1164,7 +1191,7 @@ def set_job_refunded(job_id: int, refund_id: str, refund_status: str) -> Job:
     # Emit job_refunded_final reputation events (client + worker parties;
     # the brief lists jobs refunded-final in both parties' counters).
     conn.execute(
-        "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
         (client_party_id, job_id, "job_refunded_final", json.dumps({}), _now())
     )
     worker_row = conn.execute(
@@ -1172,7 +1199,7 @@ def set_job_refunded(job_id: int, refund_id: str, refund_status: str) -> Job:
     ).fetchone()
     worker_party_id = worker_row[0] if worker_row and worker_row[0] else 2
     conn.execute(
-        "INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at) VALUES (?, ?, ?, ?, ?)",
         (worker_party_id, job_id, "job_refunded_final", json.dumps({}), _now())
     )
     conn.commit()
@@ -1327,7 +1354,7 @@ def store_reputation_event(party_id: int, job_id: int, kind: str, detail: Option
     conn = sqlite3.connect(get_db_path())
     cursor = conn.execute(
         """
-        INSERT INTO reputation_events (party_id, job_id, kind, detail, created_at)
+        INSERT OR IGNORE INTO reputation_events (party_id, job_id, kind, detail, created_at)
         VALUES (?, ?, ?, ?, ?)
         """,
         (party_id, job_id, kind, json.dumps(detail or {}), _now())
