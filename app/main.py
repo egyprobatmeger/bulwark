@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import threading
 import uuid
 import sqlite3
 from typing import Optional, Dict
@@ -81,6 +82,17 @@ from app.config import (
 BULWARK_PORT = int(os.environ.get('BULWARK_PORT', 8077))
 HOST = '127.0.0.1'
 MAX_FILE_SIZE = 25 * 1024 * 1024  # 25 MB per file
+
+# Per-job claim locks for the one-shot actions (appeal, revision).
+# The server is a single process (ThreadingHTTPServer), so a
+# process-level lock makes each claim atomic across its threads.
+_JOB_CLAIM_LOCKS: Dict[int, threading.Lock] = {}
+_JOB_CLAIM_LOCKS_GUARD = threading.Lock()
+
+
+def _job_claim_lock(job_id: int) -> threading.Lock:
+    with _JOB_CLAIM_LOCKS_GUARD:
+        return _JOB_CLAIM_LOCKS.setdefault(job_id, threading.Lock())
 
 def parse_criteria_from_form(form_data):
     criteria = []
@@ -1386,6 +1398,29 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'Job not found')
             return
+        # The one-appeal rule was guarded by a read-then-act count
+        # check; two concurrent appeal requests both passed it, and
+        # both senior re-checks were decided and stored (the final
+        # state decided by whichever thread wrote last). The appeal
+        # is now claimed atomically per job: a concurrent second
+        # appeal gets a 409 instead of a second decision. An
+        # incomplete appeal (judge unavailable) stores nothing, so
+        # being claimed never consumes the appeal.
+        lock = _job_claim_lock(job_id)
+        if not lock.acquire(blocking=False):
+            self.send_response(409)
+            self.end_headers()
+            self.wfile.write(b'An appeal for this job is already '
+                             b'decided or in progress; the appeal '
+                             b'verdict is final.')
+            return
+        try:
+            self._handle_appeal_locked(job_id)
+        finally:
+            lock.release()
+
+    def _handle_appeal_locked(self, job_id):
+        job = get_job(job_id)
         verdicts = get_verdicts(job_id)
         latest = verdicts[0] if verdicts else None
         if (job.state != 'checked_fail' or latest is None
@@ -1604,6 +1639,24 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             emit_reputation_event_once(
                 job.checker_id, job_id, 'overturned',
                 {"senior_model": senior})
+        if job.checker_vesting_state != 'vesting':
+            # A vesting release that started before this dispute
+            # was opened can complete while the senior re-check
+            # above is running. The client recovery below pays out
+            # the SAME fee, so paying it when the fee is no longer
+            # vesting would pay the fee twice (and overwrite the
+            # release record). The dispute outcome stands; only
+            # the duplicate recovery payment is skipped.
+            add_event(job.id, 'checker_fee_recovery_skipped',
+                      actor='system',
+                      detail={"reason": "checker fee no longer vesting "
+                              f"(state: {job.checker_vesting_state}); "
+                              "already released, not paid twice"})
+            set_job_state(job_id, 'disputed_overturned')
+            self.send_response(302)
+            self.send_header('Location', f'/job/{job_id}')
+            self.end_headers(); self.wfile.write(b'')
+            return
         client_party = get_party(job.client_id) if job.client_id else None
         receiver = (client_party['payout_email']
                     if client_party and client_party.get('payout_email')
@@ -2059,6 +2112,24 @@ class BulwarkHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'Job not found')
             return
 
+        # The one-revision rule was guarded by a read-then-act
+        # check of revision_used; two concurrent revise requests
+        # both passed it and recorded two revision batches (the
+        # re-check would have measured a mix of both). The
+        # revision is now claimed atomically per job, like the
+        # appeal: a concurrent second submission is turned away.
+        lock = _job_claim_lock(job_id)
+        if not lock.acquire(blocking=False):
+            self._render_detail(job, info_message=(
+                "This job's one permitted revision is already "
+                "being submitted. The revision is final."))
+            return
+        try:
+            self._handle_revise_locked(job_id, job)
+        finally:
+            lock.release()
+
+    def _handle_revise_locked(self, job_id, job):
         if job.state == 'settled':
             self._render_detail(job, info_message=(
                 "This job is settled — no revision is possible."))

@@ -368,8 +368,15 @@ def start_vesting(job, checker_amount_cents: int):
 
 
 def release_vesting(job) -> bool:
+    # An overturned dispute assigns the fee to the CLIENT. If that
+    # recovery payout failed, the fee is still 'vesting' with
+    # dispute_state 'overturned' — releasing it here would pay the
+    # checker money the dispute decision gave to the client. The
+    # fee may only be released when no dispute overturned it; a
+    # failed client recovery stays held for retry through the
+    # dispute path.
     if (job is None or job.checker_vesting_state != 'vesting'
-            or job.dispute_state == 'open'):
+            or job.dispute_state in ('open', 'overturned')):
         return False
     checker_party = get_party(job.checker_id) if job.checker_id else None
     receiver = (checker_party['payout_email']
